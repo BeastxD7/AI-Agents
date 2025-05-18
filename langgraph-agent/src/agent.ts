@@ -24,20 +24,22 @@ const agent = createReactAgent({
 });
 
 // Now it's time to use!
-const agentFinalState = await agent.invoke(
-  { messages: [new HumanMessage("what is the current weather in sf")] },
-  { configurable: { thread_id: "42" } },
-);
+(async () => {
+  const agentFinalState = await agent.invoke(
+    { messages: [new HumanMessage("what is the current weather in sf")] },
+    { configurable: { thread_id: "42" } },
+  );
 
-console.log(
-  agentFinalState.messages[agentFinalState.messages.length - 1].content,
-);
+  console.log(
+    agentFinalState.messages[agentFinalState.messages.length - 1].content,
+  );
 
-const agentNextState = await agent.invoke(
-  { messages: [new HumanMessage("what about ny")] },
-  { configurable: { thread_id: "42" } },
-);
+  const agentNextState = await agent.invoke(
+    { messages: [new HumanMessage("what about ny")] },
+    { configurable: { thread_id: "42" } },
+  );
 
-console.log(
-  agentNextState.messages[agentNextState.messages.length - 1].content,
-);
+  console.log(
+    agentNextState.messages[agentNextState.messages.length - 1].content,
+  );
+})();
