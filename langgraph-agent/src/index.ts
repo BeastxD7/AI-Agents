@@ -9,7 +9,7 @@ import axios from "axios"
 
 
 config();
-const authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiNDZmNDVkNi1jYzgwLTRmYjktYTA3MC1mMTg5ZWJmMDFhNjIiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc0NzU3NTk4MywiZXhwIjoxNzQ4MTgwNzgzfQ.mn1oIrUazh7e9Iu548NFh6O9HlqTXcGFX-jHNhXXfPc';``
+const authToken = process.env.AUTH_TOKEN
 
 const searchDoctors = tool(
   async (input: { search?: string; specialty?: string }) => {
