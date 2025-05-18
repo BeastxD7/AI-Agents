@@ -17,18 +17,33 @@ importers:
       '@langchain/langgraph':
         specifier: ^0.2.72
         version: 0.2.72(@langchain/core@0.3.56(openai@4.100.0(ws@8.18.2)(zod@3.24.4)))(zod-to-json-schema@3.24.5(zod@3.24.4))
+      '@langchain/langgraph-checkpoint':
+        specifier: ^0.0.17
+        version: 0.0.17(@langchain/core@0.3.56(openai@4.100.0(ws@8.18.2)(zod@3.24.4)))
       '@langchain/openai':
         specifier: ^0.5.10
         version: 0.5.10(@langchain/core@0.3.56(openai@4.100.0(ws@8.18.2)(zod@3.24.4)))(ws@8.18.2)
       '@langchain/tavily':
         specifier: ^0.1.1
         version: 0.1.1(@langchain/core@0.3.56(openai@4.100.0(ws@8.18.2)(zod@3.24.4)))
+      '@types/readline-sync':
+        specifier: ^1.4.8
+        version: 1.4.8
+      axios:
+        specifier: ^1.9.0
+        version: 1.9.0(debug@4.4.1)
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
       langchain:
         specifier: ^0.3.26
         version: 0.3.26(@langchain/core@0.3.56(openai@4.100.0(ws@8.18.2)(zod@3.24.4)))(axios@1.9.0)(openai@4.100.0(ws@8.18.2)(zod@3.24.4))(ws@8.18.2)
+      readline-sync:
+        specifier: ^1.4.10
+        version: 1.4.10
+      zod:
+        specifier: ^3.24.4
+        version: 3.24.4
 
 packages:
 
@@ -509,6 +524,9 @@ packages:
   '@types/node@18.19.100':
     resolution: {integrity: sha512-ojmMP8SZBKprc3qGrGk8Ujpo80AXkrP7G2tOT4VWr5jlr5DHjsJF+emXJz+Wm0glmy4Js62oKMdZZ6B9Y+tEcA==}
 
+  '@types/readline-sync@1.4.8':
+    resolution: {integrity: sha512-BL7xOf0yKLA6baAX6MMOnYkoflUyj/c7y3pqMRfU0va7XlwHAOTOIo4x55P/qLfMsuaYdJJKubToLqRVmRtRZA==}
+
   '@types/retry@0.12.0':
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
 
@@ -939,6 +957,10 @@ packages:
     resolution: {integrity: sha512-9nX56alTf5bwXQ3ZDipHJhusu9NTQJ/CVPtb/XHAJCXihZeitfJvIRS4GqQ/mfIoOE3IelHMrpayVrosdHBuLw==}
     engines: {node: '>=8'}
 
+  readline-sync@1.4.10:
+    resolution: {integrity: sha512-gNva8/6UAe8QYepIQH/jQ2qn91Qj0B9sYjMBBs3QOB8F2CXcKgLxQaJRP76sWVRQt+QU+8fAkCbCvjjMFu7Ycw==}
+    engines: {node: '>= 0.8.0'}
+
   requires-port@1.0.0:
     resolution: {integrity: sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==}
 
@@ -1216,6 +1238,8 @@ snapshots:
   '@types/node@18.19.100':
     dependencies:
       undici-types: 5.26.5
+
+  '@types/readline-sync@1.4.8': {}
 
   '@types/retry@0.12.0': {}
 
@@ -1596,6 +1620,8 @@ snapshots:
   readable-web-to-node-stream@3.0.4:
     dependencies:
       readable-stream: 4.7.0
+
+  readline-sync@1.4.10: {}
 
   requires-port@1.0.0: {}
 
