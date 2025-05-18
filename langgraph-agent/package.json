@@ -1,0 +1,22 @@
+{
+  "name": "langgraph-agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/community": "^0.3.43",
+    "@langchain/core": "^0.3.56",
+    "@langchain/langgraph": "^0.2.72",
+    "@langchain/openai": "^0.5.10",
+    "@langchain/tavily": "^0.1.1",
+    "dotenv": "^16.5.0",
+    "langchain": "^0.3.26"
+  }
+}
