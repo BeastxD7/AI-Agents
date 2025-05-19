@@ -2,11 +2,15 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
+// import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { AzureChatOpenAI } from "@langchain/openai";
 import { config } from "dotenv";
 import readlineSync from "readline-sync";
 import axios from "axios"
+import { MemorySaver } from "@langchain/langgraph";
+import { getAvailableTimeSlots } from "./tools/tools";
 
-
+const checkpointer = new MemorySaver();
 
 config();
 const authToken = process.env.AUTH_TOKEN
@@ -18,7 +22,7 @@ const searchDoctors = tool(
       if (input.search) params.search = input.search;
       if (input.specialty) params.specialty = input.specialty;
 
-      const res = await axios.get("https://api.swastify.life/patient/get-doctors", {
+      const res = await axios.get(`${process.env.API_URL}/patient/get-doctors`, {
         params,
          headers: {
           Cookie: `auth_token=${authToken}`,
@@ -34,7 +38,7 @@ const searchDoctors = tool(
      const doctorsList = data.doctors
   .map(
     (doc: any, i: number) =>
-      `${i + 1}. Dr. ${doc.name} (ID: ${doc.id}) - ${doc.specialty} (${doc.experience} years), Fee: ₹${doc.consultationFee}, Clinic: ${doc.clinicAddress}`
+      `${i + 1}. Dr. ${doc.name} (ID: ${doc.userId}) - ${doc.specialty} (${doc.experience} years), Fee: ₹${doc.consultationFee}, Clinic: ${doc.clinicAddress}`
   )
   .join("\n");
 
@@ -63,7 +67,7 @@ const getAvailableDatesForMonth = tool(
       
 
       const res = await axios.get(
-        "https://api.swastify.life/patient/get-available-dates", // put the actual endpoint URL here
+        `${process.env.API_URL}/patient/available-dates`, // put the actual endpoint URL here
         {
           params: { doctorId, year, month },
           headers: {
@@ -97,32 +101,138 @@ const getAvailableDatesForMonth = tool(
   }
 );
 
+const getCurrentDate = tool(
+  async () => {
+    const today = new Date();
+
+    const format = (date: Date) =>
+      date.toLocaleDateString("en-IN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const dayAfter = new Date(today);
+    dayAfter.setDate(today.getDate() + 2);
+
+    return `🗓️ Dates are as follows:
+- Today: ${format(today)}
+- Tomorrow: ${format(tomorrow)}
+- Day after tomorrow: ${format(dayAfter)}`;
+  },
+  {
+    name: "getCurrentDate",
+    description: "Get today's, tomorrow's, and day after tomorrow's date in DD/MM/YYYY format.",
+    schema: z.object({}),
+  }
+);
+
+type SlotInput = {
+  doctorId: string;
+  date: string; // YYYY-MM-DD
+};
+
+const getAvailableTimeSlotsTool = tool(
+  async (input: SlotInput) => {
+    const { doctorId, date } = input;
+    const slots = await getAvailableTimeSlots({ doctorId, date });
+
+    if (slots.length === 0) {
+      return `No available slots for doctor ${doctorId} on ${date} 😔`;
+    }
+
+    return `Available slots for ${date}:\n${slots.map((s: any) => s.displayTime).join(", ")}`;
+  },
+  {
+    name: "getAvailableTimeSlots",
+    description: "Get 30-minute available appointment time slots for a doctor on a specific date.",
+    schema: z.object({
+      doctorId: z.string().describe("The ID of the doctor"),
+      date: z.string().describe("The date in YYYY-MM-DD format"),
+    }),
+  }
+);
 
 
-const llm = new ChatOpenAI({
-  openAIApiKey: process.env.OPENAI_API_KEY!,
-  modelName: "gpt-4.1-mini", // ← this one works perfectly with tools
+
+// const llm = new ChatOpenAI({
+//   openAIApiKey: process.env.OPENAI_API_KEY!,
+//   modelName: "gpt-4.1-mini", // ← this one works perfectly with tools
+//   temperature: 0.2,
+//   verbose:true
+// });
+
+const llm = new AzureChatOpenAI({
+  openAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+  azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+  openAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
+  azureOpenAIBasePath: process.env.AZURE_OPENAI_BASE_PATH,
   temperature: 0.2,
-  verbose:false
 });
+
+// const llm = new ChatGoogleGenerativeAI({
+//   model: "gemini-2.0-flash", // You can also use "gemini-1.5-pro" if you got access
+//   temperature: 0.2,
+//   apiKey: process.env.GEMINI_API_KEY!,
+//   verbose:true // Add this to your .env
+// });
+
+// const llm = new ChatOpenAI({
+//   modelName: "meta-llama/llama-3-70b-instruct",
+//   temperature: 0.2,
+//   openAIApiKey: process.env.OPENROUTER_API_KEY!,
+//   configuration: {
+//     baseURL: "https://openrouter.ai/api/v1",
+//   },
+// });
 
 
 const agent = createReactAgent({
   llm,
-  tools: [searchDoctors,getAvailableDatesForMonth],
+  tools: [
+    searchDoctors,
+    getAvailableDatesForMonth,
+    getCurrentDate,
+    getAvailableTimeSlotsTool,
+  ],
   prompt: `
-  You are a Medical Assistant for Company Swastify. You have access to two tools: searchDoctors and getAvailableDatesForMonth.
-- When the user asks for doctors, use searchDoctors.
-- When the user wants available appointment dates for a doctor, use getAvailableDatesForMonth.
-- If the user does not mention the doctor explicitly, then just call searchdoctor tool with the doctor name and extract doctor Id of the specific doctor and call the getAvailableDatesForMonth toolwith doctorId
-- If you don't know the answer, politely say you can't answer right now.
+You are Gundu, a helpful, Gen-Z style Medical Assistant working for Swastify 😎.
 
-Keep your answers clear and helpful.
-  `,
+You’ve got access to 4 tools:
+- 🧑‍⚕️ searchDoctors: Use this when the user gives a name or specialty to find matching doctors and get their doctorId.
+- 📅 getAvailableDatesForMonth: Use this once you have doctorId to fetch available dates for a specific month (skip past dates).
+- ⏰ getAvailableTimeSlots: Use this after you know doctorId AND date to fetch 30-minute time slots (skip past times).
+- 🗓️ getCurrentDate: Use this to convert "today", "tomorrow", or "day after tomorrow" into real dates.
+
+💡 Tool Usage Rules:
+- Do **NOT** call the same tool multiple times with the same input.
+- If a tool returns no useful data or fails, do **not** repeat the call.
+- If you’re stuck or can’t proceed, just ask the user for more info and stop.
+
+🧠 Workflow Tips:
+- To find slots for a date like "Tuesday", first get the real date with getCurrentDate.
+- Then searchDoctors by name to get doctorId.
+- Then getAvailableTimeSlots with that doctorId + real date.
+- Use **only 2 tool calls max per user message**, unless you’re sure it’s progressing.
+
+🧍 Personality:
+You're chill, smart, and helpful. Keep responses short, friendly, and vibey 🤙🏽.
+Say things like "Lemme check that for you..." or "Hold up, pulling those deets real quick 🧠"
+
+If you ever feel stuck or the info isn’t enough, just say “Yo, I need a lil more info to help you out 😅”
+
+`,  
+  checkpointer,
 });
 
+
 const chat = async () => {
-  const messages = [];
+  const messages: { role: "user" | "assistant", content: string }[] = [];
+
+  
 
   console.log('👋 Yo! Gundu is here. Ask me anything bro...\n');
 
@@ -134,14 +244,41 @@ const chat = async () => {
       break;
     }
 
+    // Push user message
     messages.push({ role: 'user', content: userInput });
 
-    const response:any = await agent.invoke({ messages });
+const threadId = "gundu-main-thread"
+    
+const response = await agent.invoke({
+  messages,
+}, {
+  configurable: {
+    thread_id: threadId,
+  },
+});
 
-    const gunduReply:any = response.messages[response.messages.length - 1];
-    messages.push(gunduReply);
 
-    console.log(`🤖 Gundu: ${gunduReply.content}\n`);
+    // Extract latest assistant message
+    const assistantMsg = response.messages[response.messages.length - 1];
+
+    // Push assistant reply
+    const assistantContent =
+      typeof assistantMsg.content === "string"
+        ? assistantMsg.content
+        : Array.isArray(assistantMsg.content)
+        ? assistantMsg.content.map((c: any) => (typeof c === "string" ? c : c.text ?? "")).join(" ")
+        : "";
+
+    messages.push({
+      role: 'assistant',
+      content: assistantContent,
+    });
+
+
+    
+
+    // Show assistant response
+    console.log(`🤖 Gundu: ${assistantContent}\n`);
   }
 };
 
